@@ -10,19 +10,17 @@ from werkzeug.exceptions import BadRequest
 from nanoid import generate
 from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
-# MODEL_PATH = os.getenv("MODEL_PATH")
-# TEMP_IMAGE_DIR = os.getenv("TEMP_IMAGE_DIR")
-# CLOUD_STORAGE_KEY = os.getenv("CLOUD_STORAGE_KEY")
-# BUCKET_NAME = os.getenv("BUCKET_NAME")
-# FACE_SHAPES_PATH = os.getenv("FACE_SHAPES_PATH")
+MODEL_PATH = os.getenv("MODEL_PATH")
+TEMP_IMAGE_DIR = os.getenv("TEMP_IMAGE_DIR")
+CLOUD_STORAGE_KEY = os.getenv("CLOUD_STORAGE_KEY")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+FACE_SHAPES_PATH = os.getenv("FACE_SHAPES_PATH")
 
-storage_client = storage.Client.from_service_account_json(
-    "smartcut-backend-cf18c00c42c6.json"
-)
-bucket = storage_client.bucket("smartcut-backend-bucket")
-model = load_model("model/model.h5")
+storage_client = storage.Client.from_service_account_json(CLOUD_STORAGE_KEY)
+bucket = storage_client.bucket(BUCKET_NAME)
+model = load_model(MODEL_PATH)
 
 app = Flask(__name__)
 
@@ -67,14 +65,14 @@ def process_image():
     if file_ext not in ["jpg", "jpeg", "png"]:
         raise BadRequest("Image format must be jpg or jpeg or png")
 
-    image_path = "tmp/" + generate(size=16) + "." + file_ext
+    image_path = TEMP_IMAGE_DIR + generate(size=16) + "." + file_ext
     file.save(image_path)
 
     # Prediction
     face_type = predict(image_path)
 
     # Give 5 hairstyle reccomendations according to face type
-    blobs = bucket.list_blobs(prefix="face-shapes" + "/" + face_type)
+    blobs = bucket.list_blobs(prefix=FACE_SHAPES_PATH + "/" + face_type)
     images_list = list(blobs)
 
     reccomendations = []
